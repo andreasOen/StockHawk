@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onClick(String symbol) {
         Timber.d("Symbol clicked: %s", symbol);
+        startActivity(StockDetailActivity.newIntent(this, symbol));
     }
 
     @Override
@@ -84,13 +85,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     }
 
-    private boolean networkUp() {
-        ConnectivityManager cm =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-        return networkInfo != null && networkInfo.isConnectedOrConnecting();
-    }
-
     @Override
     public void onRefresh() {
 
@@ -112,25 +106,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-    public void button(@SuppressWarnings("UnusedParameters") View view) {
-        new AddStockDialog().show(getFragmentManager(), "StockDialogFragment");
-    }
-
-    void addStock(String symbol) {
-        if (symbol != null && !symbol.isEmpty()) {
-
-            if (networkUp()) {
-                swipeRefreshLayout.setRefreshing(true);
-            } else {
-                String message = getString(R.string.toast_stock_added_no_connectivity, symbol);
-                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-            }
-
-            PrefUtils.addStock(this, symbol);
-            QuoteSyncJob.syncImmediately(this);
-        }
-    }
-
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         return new CursorLoader(this,
@@ -149,21 +124,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         adapter.setCursor(data);
     }
 
-
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         swipeRefreshLayout.setRefreshing(false);
         adapter.setCursor(null);
-    }
-
-
-    private void setDisplayModeMenuItemIcon(MenuItem item) {
-        if (PrefUtils.getDisplayMode(this)
-                .equals(getString(R.string.pref_display_mode_absolute_key))) {
-            item.setIcon(R.drawable.ic_percentage);
-        } else {
-            item.setIcon(R.drawable.ic_dollar);
-        }
     }
 
     @Override
@@ -185,5 +149,40 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void button(@SuppressWarnings("UnusedParameters") View view) {
+        new AddStockDialog().show(getFragmentManager(), "StockDialogFragment");
+    }
+
+    void addStock(String symbol) {
+        if (symbol != null && !symbol.isEmpty()) {
+
+            if (networkUp()) {
+                swipeRefreshLayout.setRefreshing(true);
+            } else {
+                String message = getString(R.string.toast_stock_added_no_connectivity, symbol);
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            }
+
+            PrefUtils.addStock(this, symbol);
+            QuoteSyncJob.syncImmediately(this);
+        }
+    }
+
+    private boolean networkUp() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(
+                Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnectedOrConnecting();
+    }
+
+    private void setDisplayModeMenuItemIcon(MenuItem item) {
+        if (PrefUtils.getDisplayMode(this).equals(
+                getString(R.string.pref_display_mode_absolute_key))) {
+            item.setIcon(R.drawable.ic_percentage);
+        } else {
+            item.setIcon(R.drawable.ic_dollar);
+        }
     }
 }
